@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TSID Generator</title>
+    <link rel="icon" type="image/png" href="https://cdn.dribbble.com/users/7549673/screenshots/17206704/media/1210a9d0ec8af427967e735935861eeb.png?resize=400x300&vertical=center" />
+    <style>
+        /* Estilos anteriores se mantienen igual */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --background: #09090b;
+            --surface: #18181b;
+            --text: #fafafa;
+            --text-light: #a1a1aa;
+            --border: #3f3f46;
+            --success: #16a34a;
+            --error: #dc2626;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: var(--background);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+            padding: 1rem;
+            box-sizing: border-box;
+            overflow-y: hidden;
+        }
+
+        .container {
+            background: var(--surface);
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid var(--border);
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        h1 {
+            color: var(--text);
+            text-align: center;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+            font-size: 1.5rem;
+        }
+
+        .input-group {
+            margin-bottom: 1.5rem;
+        }
+
+        input {
+            width: 90%;
+            padding: 0.875rem;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            background: var(--background);
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 0.875rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: var(--primary-hover);
+        }
+
+        .result-section {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        .result-section.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .result-label {
+            color: var(--text-light);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-content {
+            background: var(--background);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .result-content:hover {
+            border-color: var(--primary);
+        }
+
+        .result-text {
+            font-size: 0.875rem;
+            color: var(--text);
+            word-break: break-all;
+            padding-right: 1rem;
+        }
+
+        .message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-size: 0.875rem;
+            display: none;
+        }
+
+        .message.success {
+            background: #14532d;
+            color: #86efac;
+            border: 1px solid #22c55e;
+        }
+
+        .message.error {
+            background: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #ef4444;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-height: 600px) {
+            .container {
+                padding: 1.5rem;
+                max-height: 98vh;
+            }
+            h1 {
+                font-size: 1.25rem;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>•- TSID Generator -•</h1>
+        
+        <div class="input-group">
+            <input type="url" id="inputUrl" 
+                   placeholder="Pega la URL con TSID aquí..."
+                   autocomplete="off">
+        </div>
+
+        <button onclick="processUrl()">Generar Enlace TSID</button>
+
+        <div id="resultSection" class="result-section">
+            <div class="result-label">Enlace TSID generado:</div>
+            <div class="result-content" onclick="copyGeneratedLink()">
+                <span id="generatedLink" class="result-text"></span>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+    </div>
+
+    <script>
+        async function copyToClipboard(text) {
+            try {
+                await navigator.clipboard.writeText(text);
+                return true;
+            } catch (error) {
+                try {
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    return true;
+                } catch (error) {
+                    return false;
+                }
+            }
+        }
+
+        async function processUrl() {
+            const inputUrl = document.getElementById('inputUrl').value;
+            const resultSection = document.getElementById('resultSection');
+            const generatedLink = document.getElementById('generatedLink');
+
+            try {
+                const url = new URL(inputUrl);
+                const params = new URLSearchParams(url.search);
+                const tsid = params.get('tsid');
+
+                // Validar TSID (32 caracteres alfanuméricos)
+                if (!tsid || !/^[a-f0-9]{32}$/i.test(tsid)) {
+                    throw new Error('TSID no válido o no encontrado (debe ser 32 caracteres alfanuméricos)');
+                }
+
+                const tsidLink = `https://tssrvy.com/r/?st=1&tsid=${tsid.toLowerCase()}`;
+                generatedLink.textContent = tsidLink;
+                resultSection.classList.add('active');
+
+                const success = await copyToClipboard(tsidLink);
+                if (!success) throw new Error('No se pudo copiar automáticamente. Haz clic manualmente');
+
+                showMessage('Enlace TSID copiado!', 'success');
+                resetInactivityTimer();
+
+            } catch (error) {
+                resultSection.classList.remove('active');
+                showMessage(error.message, 'error');
+            }
+        }
+
+        let inactivityTimer;
+        const inactivityDelay = 30000;
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(clearFields, inactivityDelay);
+        }
+
+        function clearFields() {
+            document.getElementById('inputUrl').value = '';
+            document.getElementById('generatedLink').textContent = '';
+            document.getElementById('resultSection').classList.remove('active');
+            document.getElementById('message').style.display = 'none';
+        }
+
+        function showMessage(text, type) {
+            const message = document.getElementById('message');
+            message.className = `message ${type}`;
+            message.textContent = text;
+            message.style.display = 'block';
+            
+            setTimeout(() => {
+                message.style.opacity = '0';
+                setTimeout(() => {
+                    message.style.display = 'none';
+                    message.style.opacity = '1';
+                }, 300);
+            }, 5000);
+        }
+
+        async function copyGeneratedLink() {
+            const link = document.getElementById('generatedLink').textContent;
+            const success = await copyToClipboard(link);
+            showMessage(success ? '¡TSID copiado!' : 'Error al copiar', success ? 'success' : 'error');
+            resetInactivityTimer();
+        }
+
+        document.addEventListener('mousemove', resetInactivityTimer);
+        document.addEventListener('keypress', resetInactivityTimer);
+    </script>
+</body>
+</html>
